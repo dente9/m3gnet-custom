@@ -108,3 +108,5 @@ trainer.train(
     fit_per_element_offset=True,
     save_checkpoint=True
 )
+
+print('模型训练完成，保存模型')
