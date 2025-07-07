@@ -6,14 +6,16 @@ from m3gnet.models import M3GNet, Potential
 from m3gnet.trainers import PotentialTrainer
 import pymatgen
 
-print('加载MPF 2021数据集')
-with open('data/block_0.p', 'rb') as f:
+print('加载MPF 2021数据集')#block_0，my_custom_data
+with open('data/my_custom_data.p', 'rb') as f:
     data = pk.load(f)
 
-with open('data/block_1.p', 'rb') as f:
-    data2 = pk.load(f)
+# with open('data/block_1.p', 'rb') as f:
+#     data2 = pk.load(f)
+
+# data.update(data2)
 print('MPF 2021数据集加载完成')
-data.update(data2)
+
 
 def get_id_train_val_test(
     total_size: int,
@@ -42,8 +44,10 @@ def get_id_train_val_test(
         indices[val_end:].tolist()
     )
 
+# 计算总结构数
+total_structures = sum(len(item['energy']) for item in data.values())
 id_train, id_val, id_test = get_id_train_val_test(
-    total_size=len(data),
+    total_size=total_structures,
     split_seed=42,
     train_ratio=0.90,
     val_ratio=0.05,
@@ -56,24 +60,24 @@ dataset_train = []
 dataset_val = []
 dataset_test = []
 
-cnt = 0
+structure_index = 0
 for key, item in data.items():
-    if cnt in id_train:
-        target_list = dataset_train
-    elif cnt in id_val:
-        target_list = dataset_val
-    elif cnt in id_test:
-        target_list = dataset_test
-    
     # 处理每个结构的数据
     for iid in range(len(item['energy'])):
+        if structure_index in id_train:
+            target_list = dataset_train
+        elif structure_index in id_val:
+            target_list = dataset_val
+        elif structure_index in id_test:
+            target_list = dataset_test
+        
         target_list.append({
             "atoms": item['structure'][iid],
             "energy": item['energy'][iid] / len(item['force'][iid]),
             "force": np.array(item['force'][iid])
         })
-    
-    cnt += 1
+        
+        structure_index += 1
 
 print(f'使用 {len(dataset_train)} 个样本训练, {len(dataset_val)} 个样本验证, {len(dataset_test)} 个样本测试')
 
